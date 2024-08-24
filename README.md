@@ -1,2 +1,5 @@
 # TOP_TicTacToe_Project
-A project from, The Odin Project. Making Tic Tac Toe in the browser
+The Odin Project - Course Project: Tic Tac Toe
+
+Making a browser based game of Tic Tac Toe.
+When finished, view it live here: https://isaacans.github.io/TOP_TicTacToe_Project
