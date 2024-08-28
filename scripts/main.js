@@ -12,6 +12,14 @@ const GameBoard = (function () {
         };
     };
 
+    function resetBoard() {
+        for (let row of board) {
+            for (let i = 0; i < board.length; i++) {
+                row[i] = 0;
+            };
+        };
+    };
+
     // Method to get the board
     const getBoard = () => board;
 
@@ -28,7 +36,7 @@ const GameBoard = (function () {
         return true;
     };
 
-    const updateBoardMarkings = (row, column, marker) => {
+    const updatePlayerMove = (row, column, marker) => {
         // If move is valid, update the board
         if (checkMoveIsValid(row, column)) {
             board[row][column] = marker;
@@ -40,7 +48,8 @@ const GameBoard = (function () {
 
     return {
         getBoard, 
-        updateBoardMarkings
+        updatePlayerMove,
+        resetBoard
     }
 })();
 
@@ -83,7 +92,7 @@ const GameController = (function () {
     };
 
     const playMove = (row, column) => {
-        if (gameBoard.updateBoardMarkings(row, column, activePlayer.marker)) {
+        if (gameBoard.updatePlayerMove(row, column, activePlayer.marker)) {
             showUpdatedBoard();
             winner = checkForWinner();
             if (winner) {
@@ -176,7 +185,7 @@ const GameController = (function () {
 /*
 Do
  - Refactor
- - Consider array of cells
+ - Consider array of cells (benefits: to return player name or player marker from the cell when requested)
     - Stop player overwrite (allow placing only on 0s)
     - Auto change turn after placing marker
     - Console log placers turn
