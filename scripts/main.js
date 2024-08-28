@@ -72,9 +72,11 @@ const Players = ((
 const GameController = (function () {
     const gameBoard = GameBoard;
     const players = Players.getPlayers();
+    let winner = null;
+
+    const getWinner = () => winner;
 
     let activePlayer = players[0]
-    
     const switchPlayerTurn = () => {
         activePlayer = activePlayer === players[0] ? players[1] : players[0];
         console.log(`${activePlayer.name}'s turn. Your marker is ${activePlayer.marker}`);
@@ -82,61 +84,79 @@ const GameController = (function () {
 
     const playMove = (row, column) => {
         if (gameBoard.updateBoardMarkings(row, column, activePlayer.marker)) {
-            checkGameEnd()
-            switchPlayerTurn();
             showUpdatedBoard();
+            winner = checkForWinner();
+            if (winner) {
+                console.log(`Winner is ${winner}`)
+            } else if (winner === false) {
+                console.log('Game is a draw!');
+            } else {
+                switchPlayerTurn();
+            };
         } else {
             console.log("Invalid move. Try again");
             return; 
         };
     };
     
-    function checkGameEnd() {
-        // Check horizontal wins - 
-        // Check every row
-        for (const row of gameBoard.getBoard()) { 
+    // Returns winner marker, true if draw, false if game not over
+    function checkForWinner() {
+        const gameBoardArray = gameBoard.getBoard();
+
+        function checkForThreeConsecutive(line) {
+            const firstMarker = line[0];
             // No win if there is an empty cell (number 0 is empty)
-            if (row[0] === 0) continue;
-            // Check if there is three in a row
-            const marker = row[0];
-            const consecutiveMarkers = row.filter((cellValue) => cellValue === marker);
-            // If there are 3 in a row, call a win
-            if (consecutiveMarkers.length === 3) {
-                // Get cell player/marker/value from board
-                console.log(`The ${row[0]}, marker wins!`);
-                return true;
+            if (!firstMarker) return; 
+            const lineConsecutiveFiltered = line.filter((cellValue) => cellValue === firstMarker);
+            // If three consecutive in the line, return the winner's marker
+            if (lineConsecutiveFiltered.length === 3) {
+                console.log(`The ${firstMarker}, marker wins!`);
+                return firstMarker;
             };
         };
 
-        // Check vertical wins -
-        // Set loop to number of columns
-        for (let i = 0; i < gameBoard.getBoard()[0].length; i++) {
-            // Create a column with values from the board array
-            const column = gameBoard.getBoard().map((row) => row[i]);
+        // Check horizontal wins
+        for (const row of gameBoardArray) { 
+            // Check line (row) for win
+            const rowWinner = checkForThreeConsecutive(row);
+            if (rowWinner) return rowWinner;
+        };
 
-            // Check if there is a winner in the column
-            if (column[0] === 0)
-                // Can't have winner if one cell is empty, continue to next column
-                continue;
-            else {
-                // Check if there is three in a row
-                const marker = column[0];
-                const consecutiveMarkers = column.filter((cellValue) => cellValue === marker);
-                // If there are 3 in a row, call a win
-                if (consecutiveMarkers.length === 3) {
-                    // Get cell player/marker/value from board
-                    console.log(`The ${column[0]}, marker wins!`);
-                    // Winner detected, return true
-                    return true;
-                };
+        // Check vertical wins
+        for (let i = 0; i < gameBoardArray[0].length; i++) {
+            // Create a column (line) with values from the board
+            const column = gameBoardArray.map((row) => row[i]);
+
+            // Check line (column) for win
+            const columnWinner = checkForThreeConsecutive(column);
+            if (columnWinner) return columnWinner;
+        };
+
+        // Check descending (left to right) diagonal win
+        function getDescendingDiagonal(board) {
+            return board.map((row, column) => row[column])
+        };
+        const descendingDiagonal = getDescendingDiagonal(gameBoardArray);
+        const descendingWinner = checkForThreeConsecutive(descendingDiagonal);
+        if (descendingWinner) return descendingWinner;
+
+        // Check ascending (left to right) diagonal win
+        function getAscendingDiagonal(board) {
+            const size = board.length;
+            return board.map((row, index) => row[size -1 -index]);
+        };
+        const ascendingDiagonal = getAscendingDiagonal(gameBoardArray);
+        const ascendingWinner = checkForThreeConsecutive(ascendingDiagonal);
+        if (ascendingWinner) return ascendingWinner;
+
+        // Check for empty spaces. If found, no draw, exit
+        for (const row of gameBoardArray) { 
+            for (const value of row) {
+                if (value === 0) return;
             };
-        }
+        };
 
-        // Check diagonal wins
-
-        // Check draws
-
-        // No wins or draws return false
+        // If no wins and no empty cells found, return false for draw
         return false;
     };
 
@@ -148,25 +168,23 @@ const GameController = (function () {
 
     return {
         playMove,
-        checkGameEnd
+        getWinner
     };
 
 })();
 
-/* 
+/*
+Do
+ - Refactor
+ - Consider array of cells
     - Stop player overwrite (allow placing only on 0s)
     - Auto change turn after placing marker
     - Console log placers turn
     - Ask for player names at start of game
- - 
- /*
-
-Core game parts - console version
     - Game board: creates new board and stores board state
     - Players: stores player names and which mark they are using
     - Move handler: updates board with valid moves
                 placeMarker on array[][]
     - Controller that changes player turns: changes next move to represent next player
- - Win check: ends game when win condition is met, stores winner
-
+    - Win check: ends game when win condition is met, stores winner
 */
