@@ -4,24 +4,22 @@ const GameBoard = (function () {
     const columns = 3;
     const board = []
 
-    // Create the board's 2D grid
+    // Create the board's 2D grid, occupied by object instances of 'Cell'
     for (let i = 0; i < rows; i++) {
         board.push([])
         for (let j = 0; j < columns; j++) {
-            board[i].push(0);
+            board[i].push(Cell());
         };
     };
 
+    // Replace the board array with new object instances of 'Cell'
     function resetBoard() {
         for (let row of board) {
             for (let i = 0; i < board.length; i++) {
-                row[i] = 0;
+                row[i] = Cell();
             };
         };
     };
-
-    // Method to get the board
-    const getBoard = () => board;
 
     function checkMoveIsValid(row, column) {
         // Index must not be negative
@@ -30,16 +28,17 @@ const GameBoard = (function () {
         const rowsHighestIndex = board.length - 1;
         const columnsHighestIndex = board[0].length - 1;
         if (row > rowsHighestIndex || column > columnsHighestIndex) return false;        
-        // Must be placed on number 0
-        if (!!board[row][column]) return false;
-        // If valid, return true
+        // Cell must be unoccupied by a player marker (cell value must be 0)
+        if (!!board[row][column].getMarker()) return false;
+        // If valid move, return true
         return true;
     };
 
-    const updatePlayerMove = (row, column, marker) => {
+    const updatePlayerMove = (row, column, playerDetails) => {
         // If move is valid, update the board
+        const {playerName, marker} = playerDetails;
         if (checkMoveIsValid(row, column)) {
-            board[row][column] = marker;
+            board[row][column].updateCell(playerName, marker);
             return true;
         } else 
         // Return false if move not valid
@@ -47,37 +46,63 @@ const GameBoard = (function () {
     };
 
     return {
-        getBoard, 
+        // Method to get the board array
+        getBoard: () => board, 
+        // Make other methods available
         updatePlayerMove,
         resetBoard
     }
 })();
 
+// Using separate 'Cell' function for encapsulation and abstraction 
+// possible future expansion and to maintain modular design 
+function Cell() {
+    let cellValue = 0;
+    let playerName = null;
+
+    // Methods to get and update cell details
+    return {
+        getMarker: () => cellValue,
+        getPlayerName: () => playerName,
+        updateCell: (name, marker) => {
+            playerName = name
+            cellValue = marker
+        }
+    };
+};
+
+// Encapsulate player data and provide methods to interact with it
 const Players = ((
-    playerOneName = 'player 1', 
-    playerTwoName = 'player 2'
+    // Default names provides
+    playerOneName = 'Player 1', 
+    playerTwoName = 'Player 2'
 ) => {
+    // Store players details in an array
     const players = [
         {
-            name: playerOneName,
+            playerName: playerOneName,
             marker: 'O'
         },
         {
-            name: playerTwoName,
+            playerName: playerTwoName,
             marker: 'X'
         }
     ];
 
-    const getPlayers = () => players;
-
-    const setPlayerNames = () => {
-        players[0].name = prompt("Enter player one's name:");
-        players[1].name = prompt("Enter player two's name:");
+    // Function expression allowing setting of player names
+    const setPlayerNames = (p1Name, p2Name) => {
+        players[0].playerName = p1Name;
+        players[1].playerName = p2Name;
     };
 
-    return {getPlayers, setPlayerNames};
+    // Methods to get and set player details
+    return {
+        getPlayers: () => players, 
+        setPlayerNames
+    };
 })();
 
+// GameController to handle flow of the game
 const GameController = (function () {
     const gameBoard = GameBoard;
     const players = Players.getPlayers();
@@ -88,12 +113,12 @@ const GameController = (function () {
     let activePlayer = players[0]
     const switchPlayerTurn = () => {
         activePlayer = activePlayer === players[0] ? players[1] : players[0];
-        console.log(`${activePlayer.name}'s turn. Your marker is ${activePlayer.marker}`);
+        console.log(`${activePlayer.playerName}'s turn. Your marker is ${activePlayer.marker}`);
     };
 
     const playMove = (row, column) => {
-        if (gameBoard.updatePlayerMove(row, column, activePlayer.marker)) {
-            showUpdatedBoard();
+        if (gameBoard.updatePlayerMove(row, column, activePlayer)) {
+            displayBoardMarkers();
             winner = checkForWinner();
             if (winner) {
                 console.log(`Winner is ${winner}`)
@@ -113,13 +138,13 @@ const GameController = (function () {
         const gameBoardArray = gameBoard.getBoard();
 
         function checkForThreeConsecutive(line) {
-            const firstMarker = line[0];
+            const firstMarker = line[0].getMarker();
             // No win if there is an empty cell (number 0 is empty)
             if (!firstMarker) return; 
-            const lineConsecutiveFiltered = line.filter((cellValue) => cellValue === firstMarker);
+            const consecutiveLineFiltered = line.filter((cellValue) => cellValue.getMarker() === firstMarker);
             // If three consecutive in the line, return the winner's marker
-            if (lineConsecutiveFiltered.length === 3) {
-                console.log(`The ${firstMarker}, marker wins!`);
+            if (consecutiveLineFiltered.length === 3) {
+                console.log(`${line[0].getPlayerName()}, marker wins!`);
                 return firstMarker;
             };
         };
@@ -160,8 +185,8 @@ const GameController = (function () {
 
         // Check for empty spaces. If found, no draw, exit
         for (const row of gameBoardArray) { 
-            for (const value of row) {
-                if (value === 0) return;
+            for (const cell of row) {
+                if (cell.getMarker() === 0) return;
             };
         };
 
@@ -169,23 +194,27 @@ const GameController = (function () {
         return false;
     };
 
-    const showUpdatedBoard = () => {
-        console.log(gameBoard.getBoard());
+    const displayBoardMarkers = () => {
+        objectsBoard = gameBoard.getBoard();
+        markersBoard = objectsBoard.map(row => row.map(cell => cell.getMarker()));
+        console.log(markersBoard);
     }
 
-    showUpdatedBoard();
+    displayBoardMarkers();
 
     return {
         playMove,
-        getWinner
+        getWinner,
+        displayBoardMarkers,
     };
-
 })();
 
 /*
 Do
- - Refactor
- - Consider array of cells (benefits: to return player name or player marker from the cell when requested)
+ - Refactor GameController
+ - Add renderer
+ - Add interactionController
+    - Consider array of cells (benefits: to return player name or player marker from the cell when requested)
     - Stop player overwrite (allow placing only on 0s)
     - Auto change turn after placing marker
     - Console log placers turn
