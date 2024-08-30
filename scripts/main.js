@@ -152,6 +152,13 @@ const DisplayController = (function () {
         });
     };
 
+    // Notifies of invalid move inputs
+    const notifyInvalidMove = () => {
+        turnInfoContainer.textContent = 'Invalid move. Try another square';
+        // Displays turn info again after delay
+        setTimeout(displayTurnInfo, 1800)
+    };
+
     // Puts (renders) turn info onto the webpage
     const displayTurnInfo = () => {
         const activePlayer = PlayerController.getActivePlayer();
@@ -165,7 +172,8 @@ const DisplayController = (function () {
 
     return {
         displayMarkersBoard,
-        displayTurnInfo
+        displayTurnInfo,
+        notifyInvalidMove
     }
 })();
 
@@ -187,7 +195,7 @@ const GameController = (function () {
                 DisplayController.displayTurnInfo();
             };
         } else {
-            console.log("Invalid move. Try again");
+            DisplayController.notifyInvalidMove();
             return; 
         };
     };
@@ -282,9 +290,10 @@ const InputController = (function() {
 
 /*
 Do
-- Update handling of win condition 
+- Update handling of win/draw events (display win/draw, stop further inputs)
 - Add restart button
 - Write full pseudocode on the game below in comments to show what pre-code design could look like
+    - Update notice of invalid move 
     - Add/update interactionController/inputController to take player's move
     - Update DisplayController to show player's name and marker on page  
     - Update DisplayController to show board on page
