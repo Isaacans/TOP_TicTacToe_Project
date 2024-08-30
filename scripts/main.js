@@ -1,10 +1,11 @@
+// Create an instance of the game board
 const GameBoard = (function () {
     // Define limits of the game board
     const rows = 3;
     const columns = 3;
     const board = []
 
-    // Create the board's 2D grid, occupied by object instances of 'Cell'
+    // Create the board's 2D grid, occupied by object instances of 'Cell' to set and get cell info
     for (let i = 0; i < rows; i++) {
         board.push([])
         for (let j = 0; j < columns; j++) {
@@ -40,9 +41,9 @@ const GameBoard = (function () {
         if (checkMoveIsValid(row, column)) {
             board[row][column].updateCell(playerName, marker);
             return true;
-        } else 
+        } 
         // Return false if move not valid
-            return false;
+        return false;
     };
 
     return {
@@ -72,7 +73,7 @@ function Cell() {
 };
 
 // Encapsulate player data and provide methods to interact with it
-const Players = ((
+const PlayerController = ((
     // Default names provides
     playerOneName = 'Player 1', 
     playerTwoName = 'Player 2'
@@ -89,7 +90,16 @@ const Players = ((
         }
     ];
 
-    // Function expression allowing setting of player names
+    // Variable to store player's turn
+    let activePlayer = players[0];
+
+    // Function to switch current player's turn
+    const switchPlayerTurn = () => {
+        activePlayer = activePlayer === players[0] ? players[1] : players[0];
+        console.log(`${activePlayer.playerName}'s turn. Your marker is ${activePlayer.marker}`);
+    };
+
+    // Function to set player names
     const setPlayerNames = (p1Name, p2Name) => {
         players[0].playerName = p1Name;
         players[1].playerName = p2Name;
@@ -98,122 +108,125 @@ const Players = ((
     // Methods to get and set player details
     return {
         getPlayers: () => players, 
+        getActivePlayer: () => activePlayer,
+        switchPlayerTurn,
         setPlayerNames
-    };
+    }
+})();
+
+// A module to control rendering of the game
+const DisplayController = (function () {
+    // Reference to the array of objects that form the game board
+    objectsBoard = GameBoard.getBoard();
+
+    // Recreates the array of objects with an array of cell markers
+    const displayBoardMarkers = () => {
+        markersBoard = objectsBoard.map(row => row.map(cell => cell.getMarker()));
+        console.log(markersBoard);
+    }
+    displayBoardMarkers();
+
+    return {
+        displayBoardMarkers,
+    }
 })();
 
 // GameController to handle flow of the game
 const GameController = (function () {
-    const gameBoard = GameBoard;
-    const players = Players.getPlayers();
     let winner = null;
 
-    const getWinner = () => winner;
-
-    let activePlayer = players[0]
-    const switchPlayerTurn = () => {
-        activePlayer = activePlayer === players[0] ? players[1] : players[0];
-        console.log(`${activePlayer.playerName}'s turn. Your marker is ${activePlayer.marker}`);
-    };
-
     const playMove = (row, column) => {
-        if (gameBoard.updatePlayerMove(row, column, activePlayer)) {
-            displayBoardMarkers();
+        if (GameBoard.updatePlayerMove(row, column, PlayerController.getActivePlayer())) {
+            DisplayController.displayBoardMarkers();
             winner = checkForWinner();
             if (winner) {
-                console.log(`Winner is ${winner}`)
+                console.log(`${winner.getPlayerName()} wins!`)
+                console.log(`The winner's marker is: ${winner.getMarker()}`)
             } else if (winner === false) {
                 console.log('Game is a draw!');
             } else {
-                switchPlayerTurn();
+                PlayerController.switchPlayerTurn();
             };
         } else {
             console.log("Invalid move. Try again");
             return; 
         };
     };
-    
-    // Returns winner marker, true if draw, false if game not over
-    function checkForWinner() {
-        const gameBoardArray = gameBoard.getBoard();
-
-        function checkForThreeConsecutive(line) {
-            const firstMarker = line[0].getMarker();
-            // No win if there is an empty cell (number 0 is empty)
-            if (!firstMarker) return; 
-            const consecutiveLineFiltered = line.filter((cellValue) => cellValue.getMarker() === firstMarker);
-            // If three consecutive in the line, return the winner's marker
-            if (consecutiveLineFiltered.length === 3) {
-                console.log(`${line[0].getPlayerName()}, marker wins!`);
-                return firstMarker;
-            };
-        };
-
-        // Check horizontal wins
-        for (const row of gameBoardArray) { 
-            // Check line (row) for win
-            const rowWinner = checkForThreeConsecutive(row);
-            if (rowWinner) return rowWinner;
-        };
-
-        // Check vertical wins
-        for (let i = 0; i < gameBoardArray[0].length; i++) {
-            // Create a column (line) with values from the board
-            const column = gameBoardArray.map((row) => row[i]);
-
-            // Check line (column) for win
-            const columnWinner = checkForThreeConsecutive(column);
-            if (columnWinner) return columnWinner;
-        };
-
-        // Check descending (left to right) diagonal win
-        function getDescendingDiagonal(board) {
-            return board.map((row, column) => row[column])
-        };
-        const descendingDiagonal = getDescendingDiagonal(gameBoardArray);
-        const descendingWinner = checkForThreeConsecutive(descendingDiagonal);
-        if (descendingWinner) return descendingWinner;
-
-        // Check ascending (left to right) diagonal win
-        function getAscendingDiagonal(board) {
-            const size = board.length;
-            return board.map((row, index) => row[size -1 -index]);
-        };
-        const ascendingDiagonal = getAscendingDiagonal(gameBoardArray);
-        const ascendingWinner = checkForThreeConsecutive(ascendingDiagonal);
-        if (ascendingWinner) return ascendingWinner;
-
-        // Check for empty spaces. If found, no draw, exit
-        for (const row of gameBoardArray) { 
-            for (const cell of row) {
-                if (cell.getMarker() === 0) return;
-            };
-        };
-
-        // If no wins and no empty cells found, return false for draw
-        return false;
-    };
-
-    const displayBoardMarkers = () => {
-        objectsBoard = gameBoard.getBoard();
-        markersBoard = objectsBoard.map(row => row.map(cell => cell.getMarker()));
-        console.log(markersBoard);
-    }
-
-    displayBoardMarkers();
 
     return {
         playMove,
-        getWinner,
-        displayBoardMarkers,
+        getWinner: () => winner,
     };
 })();
 
+// Returns a cell that is part of the winning streak, or false if game is a draw
+function checkForWinner() {
+    const gameBoardArray = GameBoard.getBoard();
+
+    // Checks for three in a row
+    function checkForThreeConsecutive(arrayOfLines) {
+        for (const line of arrayOfLines) {
+            const firstMarker = line[0].getMarker();
+            // No win if there is an empty cell (number 0 is empty)
+            if (!firstMarker) continue
+            const consecutiveLineFiltered = line.filter((cellValue) => cellValue.getMarker() === firstMarker);
+            // If three consecutive in the line, return a cell that is part of winning line
+            if (consecutiveLineFiltered.length === 3) {
+                return line[0];
+            }
+        }
+    };
+
+    // Array to store all possible winning combinations
+    const possibleWinsArray = [];
+
+    // Add rows to array to be checked
+    for (const row of gameBoardArray) { 
+        // Check line (row) for win
+        possibleWinsArray.push(row);
+    };
+
+    // Add columns to array to be checked
+    for (let i = 0; i < gameBoardArray[0].length; i++) {
+        // Create a column (line) with values from the board
+        const column = gameBoardArray.map((row) => row[i]);
+        possibleWinsArray.push(column);
+    };
+
+    // Function to get a diagonal lines from the board
+    function getDiagonal(board, isDescending) {
+        const size = board.length;
+        return board.map((row, index) => isDescending ? row[index] : row[size -1 -index]);
+    };
+
+    // Add diagonal lines to array to be checked
+    const diagonals = [true, false]; // true for descending, false for ascending
+    diagonals.forEach(isDescending => {
+        const diagonal = getDiagonal(gameBoardArray, isDescending);
+        possibleWinsArray.push(diagonal);
+    });
+
+    // Checks array for any winning rows, columns or diagonal lines
+    const winningCell = checkForThreeConsecutive(possibleWinsArray);
+    if (winningCell) return winningCell;
+
+    // Check for empty spaces, if found, exit
+    for (const row of gameBoardArray) { 
+        for (const cell of row) {
+            if (cell.getMarker() === 0) return;
+        };
+    };
+
+    // If no wins and no empty cells found, return false for draw
+    return false;
+};
+
 /*
 Do
- - Refactor GameController
- - Add renderer
- - Add interactionController
+- Add interactionController/inputController
+- Write full pseudocode on the game below in comments to show what pre-code design could look like
+    - Add renderer/displayController
+    - Refactor GameController
     - Consider array of cells (benefits: to return player name or player marker from the cell when requested)
     - Stop player overwrite (allow placing only on 0s)
     - Auto change turn after placing marker
