@@ -329,8 +329,8 @@ const InputController = (function() {
         const playerOneName = prompt("Enter player one's name");
         const playerTwoName = prompt("Enter player two's name");
         if (playerOneName == null || playerTwoName == null) {
-            alert('Player names cannot be blank');
-            
+            alert('Name must not be blank');
+            return;
         }
         PlayerController.setPlayerNames(playerOneName, playerTwoName);
     }
