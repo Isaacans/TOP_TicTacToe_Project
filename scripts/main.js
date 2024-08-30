@@ -3,7 +3,8 @@ const GameBoard = (function () {
     // Define limits of the game board
     const rows = 3;
     const columns = 3;
-    const board = []
+    const board = [];
+    let isGameInPlay = true;
 
     // Create the board's 2D grid, occupied by object instances of 'Cell' to set and get cell info
     for (let i = 0; i < rows; i++) {
@@ -36,6 +37,7 @@ const GameBoard = (function () {
     };
 
     const updatePlayerMove = (row, column, playerDetails) => {
+        if (!isGameInPlay) return;
         // If move is valid, update the board
         const {playerName, marker} = playerDetails;
         if (checkMoveIsValid(row, column)) {
@@ -46,10 +48,11 @@ const GameBoard = (function () {
         return false;
     };
 
+    // GameBoard methods
     return {
-        // Method to get the board array
         getBoard: () => board, 
-        // Make other methods available
+        getIsGameInPlay: () => isGameInPlay,
+        toggleIsGameInPlay: () => isGameInPlay = !isGameInPlay,
         updatePlayerMove,
         resetBoard
     }
@@ -96,7 +99,6 @@ const PlayerController = ((
     // Function to switch current player's turn
     const switchPlayerTurn = () => {
         activePlayer = activePlayer === players[0] ? players[1] : players[0];
-        console.log(`${activePlayer.playerName}'s turn. Your marker is ${activePlayer.marker}`);
     };
 
     // Function to set player names
@@ -152,6 +154,14 @@ const DisplayController = (function () {
         });
     };
 
+    // Puts (renders) turn info onto the webpage
+    const displayTurnInfo = () => {
+        if (!GameBoard.getIsGameInPlay()) return;
+        const activePlayer = PlayerController.getActivePlayer();
+        const turnInfoText = `${activePlayer.playerName}'s turn. Your marker is: ${activePlayer.marker}`
+        turnInfoContainer.textContent = turnInfoText;
+    };
+
     // Notifies of invalid move inputs
     const notifyInvalidMove = () => {
         turnInfoContainer.textContent = 'Invalid move. Try another square';
@@ -159,11 +169,13 @@ const DisplayController = (function () {
         setTimeout(displayTurnInfo, 1800)
     };
 
-    // Puts (renders) turn info onto the webpage
-    const displayTurnInfo = () => {
-        const activePlayer = PlayerController.getActivePlayer();
-        const turnInfoText = `${activePlayer.playerName}'s turn. Your marker is: ${activePlayer.marker}`
-        turnInfoContainer.textContent = turnInfoText;
+    const displayWinner = (name, marker) => {
+        turnInfoContainer.textContent = 
+        `${name} wins! The winner's marker is ${marker}`;
+    };
+
+    const displayDraw = () => {
+        turnInfoContainer.textContent = 'Game is a draw!';
     };
 
     // Call the functions once on page load
@@ -173,7 +185,9 @@ const DisplayController = (function () {
     return {
         displayMarkersBoard,
         displayTurnInfo,
-        notifyInvalidMove
+        notifyInvalidMove,
+        displayWinner,
+        displayDraw
     }
 })();
 
@@ -181,28 +195,29 @@ const DisplayController = (function () {
 const GameController = (function () {
     let winner = null;
 
+
     const playMove = (row, column) => {
-        if (GameBoard.updatePlayerMove(row, column, PlayerController.getActivePlayer())) {
+        const moveOutcome = GameBoard.updatePlayerMove(row, column, PlayerController.getActivePlayer());
+        if (moveOutcome) {
             DisplayController.displayMarkersBoard();
             winner = checkForWinner();
             if (winner) {
-                console.log(`${winner.getPlayerName()} wins!`)
-                console.log(`The winner's marker is: ${winner.getMarker()}`)
+                GameBoard.toggleIsGameInPlay();
+                DisplayController.displayWinner(winner.getPlayerName(), winner.getMarker())
             } else if (winner === false) {
-                console.log('Game is a draw!');
+                GameBoard.toggleIsGameInPlay();
+                DisplayController.displayDraw();
             } else {
                 PlayerController.switchPlayerTurn();
                 DisplayController.displayTurnInfo();
             };
-        } else {
+        } else if (moveOutcome === false) {
             DisplayController.notifyInvalidMove();
-            return; 
         };
     };
 
     return {
-        playMove,
-        getWinner: () => winner,
+        playMove
     }
 })();
 
@@ -290,9 +305,10 @@ const InputController = (function() {
 
 /*
 Do
-- Update handling of win/draw events (display win/draw, stop further inputs)
-- Add restart button
+- Add restart button 
+- Add name change button
 - Write full pseudocode on the game below in comments to show what pre-code design could look like
+    - Update handling of win/draw events (display win/draw, stop further inputs)
     - Update notice of invalid move 
     - Add/update interactionController/inputController to take player's move
     - Update DisplayController to show player's name and marker on page  
