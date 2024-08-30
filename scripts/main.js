@@ -15,12 +15,14 @@ const GameBoard = (function () {
     };
 
     // Replace the board array with new object instances of 'Cell'
-    function resetBoard() {
+    function resetGame() {
         for (let row of board) {
             for (let i = 0; i < board.length; i++) {
                 row[i] = Cell();
             };
         };
+        DisplayController.displayMarkersBoard();
+        isGameInPlay = true;
     };
 
     function checkMoveIsValid(row, column) {
@@ -54,7 +56,7 @@ const GameBoard = (function () {
         getIsGameInPlay: () => isGameInPlay,
         toggleIsGameInPlay: () => isGameInPlay = !isGameInPlay,
         updatePlayerMove,
-        resetBoard
+        resetGame
     }
 })();
 
@@ -97,22 +99,30 @@ const PlayerController = ((
     let activePlayer = players[0];
 
     // Function to switch current player's turn
-    const switchPlayerTurn = () => {
+    const switchActivePlayer = () => {
         activePlayer = activePlayer === players[0] ? players[1] : players[0];
+        DisplayController.displayTurnInfo();
     };
+
+    const resetActivePlayer = () => {
+        activePlayer = players[0];
+        DisplayController.displayTurnInfo();
+    }
 
     // Function to set player names
     const setPlayerNames = (p1Name, p2Name) => {
         players[0].playerName = p1Name;
         players[1].playerName = p2Name;
+        DisplayController.displayTurnInfo();
     };
 
     // Methods to get and set player details
     return {
         getPlayers: () => players, 
         getActivePlayer: () => activePlayer,
-        switchPlayerTurn,
-        setPlayerNames
+        setPlayerNames,
+        resetActivePlayer, 
+        switchActivePlayer
     }
 })();
 
@@ -208,8 +218,7 @@ const GameController = (function () {
                 GameBoard.toggleIsGameInPlay();
                 DisplayController.displayDraw();
             } else {
-                PlayerController.switchPlayerTurn();
-                DisplayController.displayTurnInfo();
+                PlayerController.switchActivePlayer();
             };
         } else if (moveOutcome === false) {
             DisplayController.notifyInvalidMove();
@@ -285,8 +294,11 @@ function checkForWinner() {
 
 // Create a function to handle user inputs to the board
 const InputController = (function() {
+    // Create reference to DOM elements and add listeners
     const gameBoardContainer = document.querySelector('.game_board');
     gameBoardContainer.addEventListener('click', inputTurnHandler);
+    const header = document.querySelector('.header');
+    header.addEventListener('click', UIButtonHandler);
 
     // Handles clicks on the game board
     function inputTurnHandler(clickEvent) {
@@ -301,13 +313,39 @@ const InputController = (function() {
         //Send player's move to GameController
         GameController.playMove(rowIndex, columnIndex);
     }
+
+    // Handles header button clicks
+    function UIButtonHandler(clickEvent) {
+        const target = clickEvent.target;
+        if (target.id === 'enter-player-names') {
+            changePlayerNames();
+        }
+        if (target.id === 'reset-game') {
+            resetGame();
+        }
+    }
+
+    function changePlayerNames() {
+        const playerOneName = prompt("Enter player one's name");
+        const playerTwoName = prompt("Enter player two's name");
+        if (playerOneName == null || playerTwoName == null) {
+            alert('Player names cannot be blank');
+            
+        }
+        PlayerController.setPlayerNames(playerOneName, playerTwoName);
+    }
+
+    function resetGame() {
+        GameBoard.resetGame();
+        PlayerController.resetActivePlayer();
+    }
 })();
 
 /*
 Do
-- Add restart button 
-- Add name change button
 - Write full pseudocode on the game below in comments to show what pre-code design could look like
+    - Add name change button
+    - Add restart button 
     - Update handling of win/draw events (display win/draw, stop further inputs)
     - Update notice of invalid move 
     - Add/update interactionController/inputController to take player's move
