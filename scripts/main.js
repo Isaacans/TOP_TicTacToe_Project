@@ -129,11 +129,13 @@ const DisplayController = (function () {
         // Create an array of markers to represent what is on the board
         markersBoard = objectsBoard.map(row => row.map(cell => cell.getMarker()));
 
+        // Clear board
+        visualBoard.textContent = '';
         // Populate the webpage with the board cells
         markersBoard.forEach((row, rowIndex) => {
             row.forEach((columnElement, columnIndex) => {
                 // Create DOM element and assign class/attributes
-                const cell = document.createElement("div");
+                const cell = document.createElement('button');
                 cell.classList.add('cell')
                 cell.dataset.row = rowIndex;
                 cell.dataset.column = columnIndex;
@@ -182,6 +184,7 @@ const GameController = (function () {
                 console.log('Game is a draw!');
             } else {
                 PlayerController.switchPlayerTurn();
+                DisplayController.displayTurnInfo();
             };
         } else {
             console.log("Invalid move. Try again");
@@ -192,7 +195,7 @@ const GameController = (function () {
     return {
         playMove,
         getWinner: () => winner,
-    };
+    }
 })();
 
 // Returns a cell that is part of the winning streak, or false if game is a draw
@@ -220,14 +223,14 @@ function checkForWinner() {
     for (const row of gameBoardArray) { 
         // Check line (row) for win
         possibleWinsArray.push(row);
-    };
+    }
 
     // Add columns to array to be checked
     for (let i = 0; i < gameBoardArray[0].length; i++) {
         // Create a column (line) with values from the board
         const column = gameBoardArray.map((row) => row[i]);
         possibleWinsArray.push(column);
-    };
+    }
 
     // Function to get a diagonal lines from the board
     function getDiagonal(board, isDescending) {
@@ -250,21 +253,39 @@ function checkForWinner() {
     for (const row of gameBoardArray) { 
         for (const cell of row) {
             if (cell.getMarker() === 0) return;
-        };
-    };
+        }
+    }
 
     // If no wins and no empty cells found, return false for draw
     return false;
 };
 
+// Create a function to handle user inputs to the board
 const InputController = (function() {
-    //
+    const gameBoardContainer = document.querySelector('.game_board');
+    gameBoardContainer.addEventListener('click', inputTurnHandler);
+
+    // Handles clicks on the game board
+    function inputTurnHandler(clickEvent) {
+        const target = clickEvent.target;
+
+        // This makes clicks on gaps and borders ignored
+        if (!target.classList.contains('cell')) return;
+        // Get row and column from cell data attribute
+        const rowIndex = target.dataset.row;
+        const columnIndex = target.dataset.column;
+
+        //Send player's move to GameController
+        GameController.playMove(rowIndex, columnIndex);
+    }
 })();
 
 /*
 Do
-- Add/update interactionController/inputController to take player's move
+- Update handling of win condition 
+- Add restart button
 - Write full pseudocode on the game below in comments to show what pre-code design could look like
+    - Add/update interactionController/inputController to take player's move
     - Update DisplayController to show player's name and marker on page  
     - Update DisplayController to show board on page
     - Add html and CSS for game rendering

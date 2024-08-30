@@ -1,11 +1,17 @@
 * {
     box-sizing: border-box;
     line-height: 1.4;
+    font-size: clamp(8px, calc(0.01rem + 3vw), 22px);
 }
 
 .container {
     text-align: center;
     padding: 1em;
+    min-width: 30em;
+}
+
+h1 {
+    font-size: 1.4em;
 }
 
 .game_board {
@@ -21,15 +27,21 @@
 } 
 
 .cell {
+    line-height: 1;
     display: flex;
     justify-content: center;
     align-items: center;
-    font-size: 10em;
+    font-size: 8em;
     font-weight: bold;
     background-color: rgb(245, 245, 220);
+
 }
 
 span {
     letter-spacing: 0.04em;
     word-spacing: 0.08em;
+}
+
+button {
+    border: none;
 }
