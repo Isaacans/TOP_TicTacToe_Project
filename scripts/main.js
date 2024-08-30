@@ -116,18 +116,54 @@ const PlayerController = ((
 
 // A module to control rendering of the game
 const DisplayController = (function () {
+    // HTML references
+    const gameContainer = document.querySelector('.container');
+    const visualBoard = gameContainer.querySelector('.game_board');
+    const turnInfoContainer = gameContainer.querySelector('span');
+
     // Reference to the array of objects that form the game board
     objectsBoard = GameBoard.getBoard();
 
     // Recreates the array of objects with an array of cell markers
-    const displayBoardMarkers = () => {
+    const displayMarkersBoard = () => {
+        // Create an array of markers to represent what is on the board
         markersBoard = objectsBoard.map(row => row.map(cell => cell.getMarker()));
-        console.log(markersBoard);
-    }
-    displayBoardMarkers();
+
+        // Populate the webpage with the board cells
+        markersBoard.forEach((row, rowIndex) => {
+            row.forEach((columnElement, columnIndex) => {
+                // Create DOM element and assign class/attributes
+                const cell = document.createElement("div");
+                cell.classList.add('cell')
+                cell.dataset.row = rowIndex;
+                cell.dataset.column = columnIndex;
+                
+                // Add marker to cell if occupied (0 is unoccupied)
+                if (columnElement) {
+                    const markerText = document.createTextNode(columnElement);
+                    cell.appendChild(markerText);
+                }
+
+                // Add element the page
+                visualBoard.appendChild(cell);
+            });
+        });
+    };
+
+    // Puts (renders) turn info onto the webpage
+    const displayTurnInfo = () => {
+        const activePlayer = PlayerController.getActivePlayer();
+        const turnInfoText = `${activePlayer.playerName}'s turn. Your marker is: ${activePlayer.marker}`
+        turnInfoContainer.textContent = turnInfoText;
+    };
+
+    // Call the functions once on page load
+    displayMarkersBoard();
+    displayTurnInfo();
 
     return {
-        displayBoardMarkers,
+        displayMarkersBoard,
+        displayTurnInfo
     }
 })();
 
@@ -137,7 +173,7 @@ const GameController = (function () {
 
     const playMove = (row, column) => {
         if (GameBoard.updatePlayerMove(row, column, PlayerController.getActivePlayer())) {
-            DisplayController.displayBoardMarkers();
+            DisplayController.displayMarkersBoard();
             winner = checkForWinner();
             if (winner) {
                 console.log(`${winner.getPlayerName()} wins!`)
@@ -221,12 +257,16 @@ function checkForWinner() {
     return false;
 };
 
+const InputController = (function() {
+    //
+})();
+
 /*
 Do
-- Update DisplayController to show board on page
-- Update DisplayController to show player's name and marker on page  
-- Add interactionController/inputController to take player's move
+- Add/update interactionController/inputController to take player's move
 - Write full pseudocode on the game below in comments to show what pre-code design could look like
+    - Update DisplayController to show player's name and marker on page  
+    - Update DisplayController to show board on page
     - Add html and CSS for game rendering
     - Add renderer/displayController
     - Refactor GameController
