@@ -223,8 +223,11 @@ function checkForWinner() {
 
 /*
 Do
-- Add interactionController/inputController
+- Update DisplayController to show board on page
+- Update DisplayController to show player's name and marker on page  
+- Add interactionController/inputController to take player's move
 - Write full pseudocode on the game below in comments to show what pre-code design could look like
+    - Add html and CSS for game rendering
     - Add renderer/displayController
     - Refactor GameController
     - Consider array of cells (benefits: to return player name or player marker from the cell when requested)

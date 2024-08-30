@@ -1,0 +1,29 @@
+* {
+    box-sizing: border-box;
+}
+
+.container {
+    text-align: center;
+    padding: 1em;
+}
+
+.game_board {
+    aspect-ratio : 1 / 1;
+    max-height: 75vh;
+    margin: 1em auto;
+    background-color: rgb(110, 110, 110);
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+    gap: 3px;
+    border: double purple 0.5em;
+} 
+
+.cell {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 10em;
+    font-weight: bold;
+    background-color: rgb(245, 245, 220);
+}
